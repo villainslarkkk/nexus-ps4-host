@@ -1,9 +1,15 @@
 /* replace rgb colors with hex value for better compatibility */
+
 body {
     font-family: sans-serif;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
-    
+    background: #050805 !important;
+    color: #f0fff0;
+}
+
+html {
+    background: #050805 !important;
 }
 
 .mainContainer {
@@ -899,4 +905,92 @@ button {
 
 #DebugConsole:hover {
     cursor: pointer;
+}
+#exploit-status-panel,
+#payloadsSection {
+    background: #101510 !important;
+    border: 1px solid #244d24 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 0 15px #39ff1415 !important;
+    padding: 14px !important;
+}
+button {
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+button:not(:disabled) {
+    border: 1px solid #244d24 !important;
+}
+
+button:focus-visible {
+    outline: 2px solid #39ff14 !important;
+    outline-offset: 3px;
+}
+
+#updateCache {
+    color: #39ff14 !important;
+}
+h1, h2, h3, p, label {
+    color: #f0fff0;
+}
+
+h1, h2 {
+    text-shadow: 0 0 8px #39ff1430;
+}
+
+#PS4FW,
+#click-to-start-text {
+    color: #39ff14 !important;
+}
+
+a {
+    color: #39ff14 !important;
+}
+input,
+select,
+textarea {
+    background: #0b120b !important;
+    color: #f0fff0 !important;
+    border: 1px solid #244d24 !important;
+    border-radius: 8px !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #39ff14 !important;
+    box-shadow: 0 0 8px #39ff1450 !important;
+}
+
+select option {
+    background: #101510 !important;
+    color: #f0fff0 !important;
+}
+::-webkit-scrollbar {
+    width: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: #050805;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #244d24;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #39ff14;
+}
+
+/* VILLAIN SLARKKK - GREEN ACCENTS */
+
+svg {
+    color: #39ff14;
+}
+
+::selection {
+    background: #39ff14;
+    color: #050805;
 }
