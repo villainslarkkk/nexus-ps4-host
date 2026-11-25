@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS // PS4 Exploit &amp; Homebrew Host</title>
+  <style>
+    :root {
+      --bg-void: #05080d;
+      --bg-panel: rgba(11, 18, 28, 0.86);
+      --bg-card: rgba(14, 23, 36, 0.92);
+      --bg-card-hover: rgba(19, 32, 49, 0.98);
+      --neon-green: #00ff9d;
+      --neon-green-dim: rgba(0, 255, 157, 0.14);
+      --electric-blue: #00d4ff;
+      --electric-blue-dim: rgba(0, 212, 255, 0.14);
+      --warn-amber: #ffb800;
+      --danger-red: #ff3b5c;
+      --text-main: #e6f1ff;
+      --text-muted: #7f95b0;
+      --border-subtle: rgba(0, 212, 255, 0.22);
+      --border-active: rgba(0, 255, 157, 0.65);
+      --glow-green: 0 0 18px rgba(0, 255, 157, 0.35);
+      --glow-blue: 0 0 20px rgba(0, 212, 255, 0.3);
+      --radius: 10px;
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+      /* Self-contained Cyberpunk Grid + Radial Glow Background */
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(0, 212, 255, 0.13) 0%, transparent 42%),
+        radial-gradient(circle at 85% 80%, rgba(0, 255, 157, 0.11) 0%, transparent 45%),
+        linear-gradient(rgba(0, 212, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.045) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      background-attachment: fixed;
+    }
+
+    /* Subtle CRT Scanline Overlay */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0, 0, 0, 0.18) 4px
+      );
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5, 8, 13, 0.92);
+      border-bottom: 1px solid var(--border-subtle);
+      backdrop-filter: blur(10px);
+      padding: 14px 24px;
+    }
+
+    .topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 8px rgba(0, 255, 157, 0.45));
+    }
+
+    .brand-title {
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--neon-green), var(--electric-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-sub {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 1.4px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      border-color: var(--neon-green);
+      background: var(--neon-green-dim);
+      color: var(--neon-green);
+      box-shadow: var(--glow-green);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Telemetry / System Status Banner */
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--electric-blue);
+    }
+
+    .stat-val.ready {
+      color: var(--neon-green);
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon-green);
+      box-shadow: 0 0 10px var(--neon-green);
+      margin-right: 6px;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+
+    /* Hero Launch Pad */
+    .hero-panel {
+      background: linear-gradient(135deg, rgba(11, 20, 34, 0.94), rgba(8, 14, 24, 0.96));
+      border: 1px solid var(--border-active);
+      box-shadow: var(--glow-blue);
+      border-radius: 14px;
+      padding: 26px;
+      margin-bottom: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--neon-green);
+      background: var(--neon-green-dim);
+      border: 1px solid rgba(0, 255, 157, 0.35);
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    .hero-copy h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .hero-copy p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .hero-action {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      min-width: 260px;
+    }
+
+    /* Primary Jailbreak Trigger Button */
+    .btn-jb-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(90deg, var(--neon-green), #00e0b8);
+      color: #03120b;
+      font-family: var(--font-mono);
+      font-size: 1.05rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      padding: 16px 26px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 0 24px rgba(0, 255, 157, 0.45);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn-jb-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 34px rgba(0, 255, 157, 0.75);
+    }
+
+    .btn-jb-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--electric-blue-dim);
+      border: 1px solid var(--electric-blue);
+      color: var(--electric-blue);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-jb-secondary:hover {
+      background: var(--electric-blue);
+      color: #041019;
+    }
+
+    /* Firmware Selector & Search Controls */
+    .controls-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .controls-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .section-heading {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--electric-blue);
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 360px;
+      min-width: 220px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(5, 9, 15, 0.9);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 9px 14px;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 12px rgba(0, 255, 157, 0.2);
+    }
+
+    .fw-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .fw-pill {
+      background: rgba(8, 14, 23, 0.95);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .fw-pill:hover {
+      border-color: var(--electric-blue);
+      color: var(--text-main);
+    }
+
+    .fw-pill.active {
+      background: linear-gradient(90deg, rgba(0, 255, 157, 0.18), rgba(0, 212, 255, 0.18));
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: var(--glow-green);
+    }
+
+    /* Firmware Info Drawer */
+    .fw-info-bar {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed rgba(0, 212, 255, 0.2);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .fw-info-bar strong {
+      color: var(--text-main);
+    }
+
+    /* Host & Payload Cards Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      background: var(--bg-card-hover);
+      border-color: var(--electric-blue);
+      box-shadow: var(--glow-blue);
+    }
+
+    .card.recommended {
+      border-color: rgba(0, 255, 157, 0.45);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card-fw-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--electric-blue-dim);
+      color: var(--electric-blue);
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      text-transform: uppercase;
+    }
+
+    .card-fw-tag.gold {
+      background: var(--neon-green-dim);
+      color: var(--neon-green);
+      border-color: rgba(0, 255, 157, 0.4);
+    }
+
+    .card-fw-tag.warn {
+      background: rgba(255, 184, 0, 0.14);
+      color: var(--warn-amber);
+      border-color: rgba(255, 184, 0, 0.35);
+    }
+
+    .card h3 {
+      font-size: 1.12rem;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .card p {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .payload-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      background: rgba(5, 9, 15, 0.85);
+      border: 1px solid rgba(127, 149, 176, 0.25);
+      color: #a8bdd6;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .btn-launch {
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: rgba(0, 255, 157, 0.14);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      transition: all 0.2s ease;
+    }
+
+    .btn-launch:hover {
+      background: var(--neon-green);
+      color: #03120b;
+      box-shadow: var(--glow-green);
+    }
+
+    .btn-cache {
+      text-align: center;
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      color: var(--electric-blue);
+      transition: all 0.2s ease;
+    }
+
+    .btn-cache:hover {
+      background: var(--electric-blue);
+      color: #03120b;
+    }
+
+    /* Secondary Views (Settings & About) */
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    .panel-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .panel-box h2 {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      color: var(--neon-green);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .setting-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(127, 149, 176, 0.15);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    /* Launch Overlay Loader */
+    .loader-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 12, 0.94);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loader-overlay.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 54px;
+      height: 54px;
+      border: 4px solid rgba(0, 212, 255, 0.2);
+      border-top-color: var(--neon-green);
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--bg-panel);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    @media (max-width: 640px) {
+      .hero-copy h1 { font-size: 1.4rem; }
+      .hero-action { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#dashboard" class="brand" onclick="switchTab('dashboard'); return false;">
+        <!-- Custom Inline SVG Cyberpunk Hex-Shield Logo -->
+        <svg class="brand-logo" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="24,3 43,14 43,34 24,45 5,34 5,14" stroke="#00ff9d" stroke-width="2.5" fill="rgba(0,255,157,0.08)" />
+          <polygon points="24,10 37,17.5 37,30.5 24,38 11,30.5 11,17.5" stroke="#00d4ff" stroke-width="1.8" fill="none" />
+          <circle cx="24" cy="24" r="5" fill="#00ff9d" />
+          <line x1="24" y1="3" x2="24" y2="10" stroke="#00ff9d" stroke-width="2" />
+          <line x1="24" y1="38" x2="24" y2="45" stroke="#00ff9d" stroke-width="2" />
+        </svg>
+        <div>
+          <span class="brand-title">ORBIS // NEXUS</span>
+          <span class="brand-sub">PS4 EXPLOIT &amp; PAYLOAD HOST</span>
+        </div>
+      </a>
+
+      <nav class="nav-links" aria-label="Main Navigation">
+        <button class="nav-btn active" id="tab-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="nav-btn" id="tab-settings" onclick="switchTab('settings')">Settings</button>
+        <button class="nav-btn" id="tab-about" onclick="switchTab('about')">About &amp; Compatibility</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Live System Telemetry Bar -->
+    <section class="status-strip" aria-label="System Telemetry">
+      <div class="stat-box">
+        <div>
+          <div class="stat-label">Detected Console FW</div>
+          <div class="stat-val" id="detected-fw">Scanning User-Agent...</div>
+        </div>
+      </div>
+      <div class="stat-box">
+        <div>
+          <div class="stat-label">Active Target Profile</div>
+          <div class="stat-val ready" id="active-profile-label">ALL FIRMWARES</div>
+        </div>
+      </div>
+      <div class="stat-box">
+        <div>
+          <div class="stat-label">Host Environment</div>
+          <div class="stat-val ready"><span class="pulse-dot"></span>STATIC / OFFLINE READY</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view-section active">
+
+      <!-- Primary Jailbreak Quick-Launch Hero -->
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <span class="hero-badge" id="hero-badge">KERNEL EXPLOIT &amp; GOLDHEN READY</span>
+          <h1 id="hero-title">One-Click PS4 Jailbreak Launcher</h1>
+          <p id="hero-desc">
+            Select your PlayStation 4 system firmware below or click <strong>Launch Jailbreak</strong> to jump straight into the recommended GoldHEN exploit loader for your console.
+          </p>
+        </div>
+        <div class="hero-action">
+          <a href="900goldhen/index.html" id="primary-jb-btn" class="btn-jb-primary" onclick="triggerLaunch(this.href, event)">
+            &#9889; Launch Jailbreak (9.00)
+          </a>
+          <a href="g2all/index.html" id="secondary-jb-btn" class="btn-jb-secondary" onclick="triggerLaunch(this.href, event)">
+            Open Multi-FW Universal Host (5.05–14.02)
+          </a>
+        </div>
+      </section>
+
+      <!-- Firmware Filter & Search Controls -->
+      <section class="controls-panel">
+        <div class="controls-top">
+          <div class="section-heading">1. Select Firmware &amp; Filter Hosts</div>
+          <div class="search-wrap">
+            <input
+              type="text"
+              id="search-input"
+              class="search-input"
+              placeholder="Search GoldHEN, Linux, FTP, GTA, 9.00..."
+              oninput="applyFilters()"
+            />
+          </div>
+        </div>
+
+        <div class="fw-pills" id="fw-pills">
+          <button class="fw-pill active" data-fw="all" onclick="selectFirmware('all')">All Supported</button>
+          <button class="fw-pill" data-fw="505" onclick="selectFirmware('505')">FW 5.05</button>
+          <button class="fw-pill" data-fw="672" onclick="selectFirmware('672')">FW 6.72</button>
+          <button class="fw-pill" data-fw="700" onclick="selectFirmware('700')">FW 7.00–8.52</button>
+          <button class="fw-pill" data-fw="900" onclick="selectFirmware('900')">FW 9.00</button>
+          <button class="fw-pill" data-fw="903" onclick="selectFirmware('903')">FW 9.03–9.50</button>
+          <button class="fw-pill" data-fw="1000" onclick="selectFirmware('1000')">FW 10.00–11.02</button>
+          <button class="fw-pill" data-fw="1150" onclick="selectFirmware('1150')">FW 11.50–14.02</button>
+        </div>
+
+        <div class="fw-info-bar" id="fw-info-bar">
+          <span><strong>Status:</strong> Showing all verified exploit hosts and payload suites in this repository.</span>
+          <span><strong>Tip:</strong> Bookmark your target host page after caching for 100% offline use.</span>
+        </div>
+      </section>
+
+      <!-- Dynamic Host & Payload Cards Grid -->
+      <section class="grid" id="hosts-grid" aria-label="Exploit Hosts">
+        <!-- Populated from verified repository directories -->
+      </section>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="view-settings" class="view-section">
+      <div class="panel-box">
+        <h2>Host Preferences &amp; Offline Cache</h2>
+        <div class="setting-row">
+          <div>
+            <strong>Default Firmware Profile</strong>
+            <div style="color: var(--text-muted); font-size: 0.85rem;">Automatically filter hosts and bind the main Jailbreak button when you open this page.</div>
+          </div>
+          <select id="default-fw-select" class="search-input" style="max-width: 220px;" onchange="saveDefaultFw(this.value)">
+            <option value="all">Auto-Detect / Show All</option>
+            <option value="505">Firmware 5.05</option>
+            <option value="672">Firmware 6.72</option>
+            <option value="700">Firmware 7.00 – 8.52</option>
+            <option value="900">Firmware 9.00 (GoldHEN)</option>
+            <option value="903">Firmware 9.03 – 9.50</option>
+            <option value="1000">Firmware 10.00 – 11.02</option>
+            <option value="1150">Firmware 11.50 – 14.02</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <strong>Reset Saved Settings</strong>
+            <div style="color: var(--text-muted); font-size: 0.85rem;">Clear stored firmware selection from browser localStorage.</div>
+          </div>
+          <button class="nav-btn" onclick="resetSettings()">Reset Defaults</button>
+        </div>
+      </div>
+
+      <div class="panel-box">
+        <h2>Direct Offline Cache Installers</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 14px;">
+          Use these verified manifest pages from your repository to store exploit files in the PS4 browser ApplicationCache for offline usage without internet:
+        </p>
+        <div class="payload-chips">
+          <a href="505/cache.html" class="btn-cache">Cache FW 5.05</a>
+          <a href="672goldhen/index.html" class="btn-cache">Cache FW 6.72 GoldHEN</a>
+          <a href="900goldhen/cache.html" class="btn-cache">Cache FW 9.00 GoldHEN</a>
+          <a href="900v3/cache.html" class="btn-cache">Cache FW 9.00 Full Suite</a>
+          <a href="g2all/cache505.html" class="btn-cache">Cache Universal 5.05</a>
+          <a href="g2all/cache700.html" class="btn-cache">Cache Universal 7.00–8.52</a>
+          <a href="g2all/cache900.html" class="btn-cache">Cache Universal 9.00–9.50</a>
+          <a href="g2all/cachecss.html" class="btn-cache">Cache 10.00–11.02</a>
+          <a href="g2all/cacheslopkit.html" class="btn-cache">Cache 11.50–14.02</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT VIEW -->
+    <div id="view-about" class="view-section">
+      <div class="panel-box">
+        <h2>Hardware &amp; Exploit Requirements</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">
+          All links on this dashboard point directly to the unmodified exploit scripts and binary payloads inside your repository folders:
+        </p>
+        <ul style="color: var(--text-muted); font-size: 0.88rem; padding-left: 20px; line-height: 1.8;">
+          <li><strong>FW 5.05 &amp; 6.72:</strong> Pure WebKit + kernel exploit chains. No USB drive required.</li>
+          <li><strong>FW 9.00 (exFAT USB Method — <code>900goldhen/</code> &amp; <code>900v3/</code>):</strong> Requires a USB drive formatted with the exFAT exploit image when prompted on screen.</li>
+          <li><strong>FW 7.00–9.50 PSFree + Lapse (<code>g2all/</code>):</strong> Uses PSFree WebKit exploit paired with Lapse kernel patches (<code>700.elf</code>–<code>950.elf</code>) and <code>goldhen_2.4b18.14.bin</code>.</li>
+          <li><strong>FW 10.00–14.02 (<code>g2all/css/</code> &amp; <code>g2all/slopkit/</code>):</strong> Includes experimental kernel patches and RPC/Lapse chains for higher firmwares.</li>
+          <li><strong>Database &amp; Cache Restore (<code>restore/</code>):</strong> Dedicated recovery hosts for 5.05, 6.72, and 9.00 to restore offline cache/DB backups.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div class="loader-overlay" id="loader-overlay">
+    <div class="spinner"></div>
+    <div style="font-family: var(--font-mono); color: var(--neon-green); font-size: 1.05rem; letter-spacing: 1px;">
+      INITIALIZING EXPLOIT ENVIRONMENT...
+    </div>
+    <div id="loader-target" style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.8rem; margin-top: 6px;"></div>
+  </div>
+
+  <script>
+    // Verified Host Catalog mapped 1:1 to existing directories in the repository
+    var HOSTS = [
+      {
+        id: "900goldhen",
+        fw: ["900"],
+        badge: "FW 9.00 // FAST AUTO-LOAD",
+        badgeClass: "gold",
+        title: "9.00 GoldHEN v2.4b18.14",
+        desc: "Streamlined single-click PS4 9.00 jailbreak host loading GoldHEN 2.4b18.14 with minimal memory footprint.",
+        url: "900goldhen/index.html",
+        cacheUrl: "900goldhen/cache.html",
+        recommended: true,
+        payloads: ["GoldHEN 2.4b18.14", "WebKit + Kexploit", "Offline Cache"]
+      },
+      {
+        id: "900v3",
+        fw: ["900"],
+        badge: "FW 9.00 // FULL PAYLOAD SUITE",
+        badgeClass: "gold",
+        title: "9.00 Full Homebrew & Mod Menu Host",
+        desc: "Complete 9.00 dashboard featuring GoldHEN 2.3/2.4b18.14, Linux 1GB–4GB loaders, Orbis Toolbox, FTP, Dumper, WebRTE, Fan Control, and GTA V menus.",
+        url: "900v3/index.html",
+        cacheUrl: "900v3/cache.html",
+        recommended: true,
+        payloads: ["GoldHEN 2.4b18.14", "Linux 1–4GB", "Orbis Toolbox", "App2USB", "WebRTE", "GTA Mods"]
+      },
+      {
+        id: "672goldhen",
+        fw: ["672"],
+        badge: "FW 6.72 // STREAMLINED",
+        badgeClass: "gold",
+        title: "6.72 GoldHEN v2.4b18.14",
+        desc: "Dedicated, fast-loading GoldHEN 2.4b18.14 exploit loader tailored specifically for PS4 firmware 6.72.",
+        url: "672goldhen/index.html",
+        cacheUrl: "672goldhen/index.html",
+        recommended: true,
+        payloads: ["GoldHEN 2.4b18.14", "jb.js + exp_loader.js", "Auto-Cache"]
+      },
+      {
+        id: "672full",
+        fw: ["672"],
+        badge: "FW 6.72 // FULL SUITE",
+        badgeClass: "",
+        title: "6.72 Complete Payload Menu",
+        desc: "Full 6.72 exploit suite with GoldHEN, Mira, HEN 2.1.3, Linux USB/Baikal, Orbis Toolbox, Save/Trophy backup, Fan Threshold, and GTA V menus.",
+        url: "672/index.html",
+        cacheUrl: "672/index.html",
+        recommended: false,
+        payloads: ["GoldHEN 2.4b18.14", "Mira / HEN", "Linux", "Orbis Toolbox", "PS4Debug", "FTP"]
+      },
+      {
+        id: "505full",
+        fw: ["505"],
+        badge: "FW 5.05 // FULL SUITE",
+        badgeClass: "gold",
+        title: "5.05 Exploit & Payload Host",
+        desc: "No-USB WebKit exploit for FW 5.05 with GoldHEN 2.3 & 2.4b18.14, Orbis Toolbox, App2USB, Game Dumper, FTP, Fan Control, and GTA menus.",
+        url: "505/index.html",
+        cacheUrl: "505/cache.html",
+        recommended: true,
+        payloads: ["GoldHEN 2.4b18.14", "GoldHEN 2.3", "Orbis Toolbox", "Dumper", "ToDEX", "WebRTE"]
+      },
+      {
+        id: "g2all-universal",
+        fw: ["505", "700", "900", "903", "1000", "1150"],
+        badge: "FW 5.05 – 14.02 // UNIVERSAL",
+        badgeClass: "gold",
+        title: "G2All Multi-Firmware GoldHEN Host",
+        desc: "Unified multi-firmware launcher powered by PSFree, Lapse, CSS, and SlopKit supporting 5.05, 7.00–8.52, 9.00–9.50, 10.00–11.02, and 11.50–14.02.",
+        url: "g2all/index.html",
+        cacheUrl: "g2all/cache900.html",
+        recommended: true,
+        payloads: ["GoldHEN 2.4b18.14", "PSFree + Lapse", "FW 7.00–9.50", "FW 10.00–14.02"]
+      },
+      {
+        id: "restore-suite",
+        fw: ["505", "672", "900"],
+        badge: "RECOVERY // CACHE & DB",
+        badgeClass: "warn",
+        title: "Offline Cache & Database Restore",
+        desc: "Recovery payload hosts for FW 5.05, 6.72, and 9.00 to restore backed-up PS4 browser offline caches and system databases.",
+        url: "restore/index.html",
+        cacheUrl: "restore/index.html",
+        recommended: false,
+        payloads: ["Restore 5.05", "Restore 6.72", "Restore 9.00", "payload.bin"]
+      }
+    ];
+
+    var FW_DETAILS = {
+      "all": {
+        label: "ALL FIRMWARES",
+        heroTitle: "One-Click PS4 Jailbreak Launcher",
+        heroBtn: "Launch Jailbreak (9.00 GoldHEN)",
+        heroUrl: "900goldhen/index.html",
+        info: "Showing all 7 verified exploit hosts and payload suites available in this repository."
+      },
+      "505": {
+        label: "FIRMWARE 5.05",
+        heroTitle: "FW 5.05 GoldHEN Exploit Ready",
+        heroBtn: "Launch 5.05 Jailbreak",
+        heroUrl: "505/index.html",
+        info: "FW 5.05 uses a pure WebKit + kernel exploit (no USB drive required). Supports GoldHEN 2.4b18.14 and full homebrew payloads."
+      },
+      "672": {
+        label: "FIRMWARE 6.72",
+        heroTitle: "FW 6.72 GoldHEN Exploit Ready",
+        heroBtn: "Launch 6.72 GoldHEN",
+        heroUrl: "672goldhen/index.html",
+        info: "FW 6.72 supports both the streamlined GoldHEN auto-loader and the full payload/Linux suite without a USB drive."
+      },
+      "700": {
+        label: "FIRMWARE 7.00 – 8.52",
+        heroTitle: "FW 7.00–8.52 PSFree + Lapse Ready",
+        heroBtn: "Launch 7.00–8.52 Host",
+        heroUrl: "g2all/index.html",
+        info: "Supports PS4 7.00, 7.50, 7.51, 8.00, 8.50, and 8.52 via PSFree + Lapse kernel patches with GoldHEN 2.4b18.14."
+      },
+      "900": {
+        label: "FIRMWARE 9.00",
+        heroTitle: "FW 9.00 GoldHEN v2.4b18.14 Ready",
+        heroBtn: "Launch 9.00 Jailbreak",
+        heroUrl: "900goldhen/index.html",
+        info: "FW 9.00 supports single-click GoldHEN, the full 900v3 payload/Linux suite, and PSFree/Lapse via G2All."
+      },
+      "903": {
+        label: "FIRMWARE 9.03 – 9.50",
+        heroTitle: "FW 9.03–9.50 Lapse Host Ready",
+        heroBtn: "Launch 9.03–9.50 Host",
+        heroUrl: "g2all/index.html",
+        info: "Supports PS4 9.03 and 9.50 via PSFree + Lapse kernel patches (903.elf / 950.elf) and GoldHEN 2.4b18.14."
+      },
+      "1000": {
+        label: "FIRMWARE 10.00 – 11.02",
+        heroTitle: "FW 10.00–11.02 Host Ready",
+        heroBtn: "Launch 10.00–11.02 Host",
+        heroUrl: "g2all/index.html",
+        info: "Supports PS4 10.00, 10.50, 11.00, and 11.02 via the G2All CSS/Lapse exploit modules."
+      },
+      "1150": {
+        label: "FIRMWARE 11.50 – 14.02",
+        heroTitle: "FW 11.50–14.02 Host Ready",
+        heroBtn: "Launch 11.50–14.02 Host",
+        heroUrl: "g2all/index.html",
+        info: "Supports PS4 11.50 through 14.02 via the G2All SlopKit exploit chain and kernel patches."
+      }
+    };
+
+    var currentFw = "all";
+
+    function detectPS4Firmware() {
+      var ua = navigator.userAgent || "";
+      var match = ua.match(/PlayStation 4\/([0-9]+\.[0-9]+)/i);
+      var el = document.getElementById("detected-fw");
+      if (match && match[1]) {
+        el.textContent = "PS4 FW " + match[1];
+        el.className = "stat-val ready";
+        return match[1];
+      } else {
+        el.textContent = "Desktop / Non-PS4 Browser";
+        return null;
+      }
+    }
+
+    function selectFirmware(fw) {
+      currentFw = fw;
+      var pills = document.querySelectorAll(".fw-pill");
+      for (var i = 0; i < pills.length; i++) {
+        pills[i].classList.toggle("active", pills[i].getAttribute("data-fw") === fw);
+      }
+
+      var meta = FW_DETAILS[fw] || FW_DETAILS["all"];
+      document.getElementById("active-profile-label").textContent = meta.label;
+      document.getElementById("hero-title").textContent = meta.heroTitle;
+
+      var primaryBtn = document.getElementById("primary-jb-btn");
+      primaryBtn.innerHTML = "&#9889; " + meta.heroBtn;
+      primaryBtn.href = meta.heroUrl;
+
+      document.getElementById("fw-info-bar").innerHTML =
+        "<span><strong>Active Profile:</strong> " + meta.info + "</span>";
+
+      applyFilters();
+    }
+
+    function applyFilters() {
+      var query = (document.getElementById("search-input").value || "").toLowerCase().trim();
+      var grid = document.getElementById("hosts-grid");
+      grid.innerHTML = "";
+
+      var filtered = HOSTS.filter(function (host) {
+        var fwMatch = currentFw === "all" || host.fw.indexOf(currentFw) !== -1;
+        if (!fwMatch) return false;
+        if (!query) return true;
+        var haystack = (
+          host.title + " " +
+          host.desc + " " +
+          host.badge + " " +
+          host.payloads.join(" ")
+        ).toLowerCase();
+        return haystack.indexOf(query) !== -1;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML =
+          '<div class="empty-state">No exploit hosts matched your current firmware filter or search term. Click "All Supported" to reset.</div>';
+        return;
+      }
+
+      filtered.forEach(function (host) {
+        var card = document.createElement("article");
+        card.className = "card" + (host.recommended ? " recommended" : "");
+
+        var chipsHtml = host.payloads.map(function (p) {
+          return '<span class="chip">' + p + "</span>";
+        }).join("");
+
+        card.innerHTML =
+          '<div>' +
+            '<div class="card-header">' +
+              '<span class="card-fw-tag ' + host.badgeClass + '">' + host.badge + "</span>" +
+            "</div>" +
+            "<h3>" + host.title + "</h3>" +
+            "<p>" + host.desc + "</p>" +
+            '<div class="payload-chips">' + chipsHtml + "</div>" +
+          "</div>" +
+          '<div class="card-actions">' +
+            '<a href="' + host.url + '" class="btn-launch" onclick="triggerLaunch(this.href, event)">Launch Exploit</a>' +
+            '<a href="' + host.cacheUrl + '" class="btn-cache" title="Open Offline Cache Page">Cache</a>' +
+          "</div>";
+
+        grid.appendChild(card);
+      });
+    }
+
+    function switchTab(tabName) {
+      var views = ["dashboard", "settings", "about"];
+      for (var i = 0; i < views.length; i++) {
+        var v = views[i];
+        document.getElementById("view-" + v).classList.toggle("active", v === tabName);
+        document.getElementById("tab-" + v).classList.toggle("active", v === tabName);
+      }
+    }
+
+    function triggerLaunch(url, event) {
+      if (event) event.preventDefault();
+      var overlay = document.getElementById("loader-overlay");
+      document.getElementById("loader-target").textContent = "Target: " + url;
+      overlay.classList.add("show");
+      setTimeout(function () {
+        window.location.href = url;
+      }, 280);
+    }
+
+    function saveDefaultFw(fw) {
+      try {
+        localStorage.setItem("nexus_ps4_default_fw", fw);
+      } catch (e) {}
+      selectFirmware(fw);
+    }
+
+    function resetSettings() {
+      try {
+        localStorage.removeItem("nexus_ps4_default_fw");
+      } catch (e) {}
+      document.getElementById("default-fw-select").value = "all";
+      selectFirmware("all");
+    }
+
+    // Boot Initialization
+    (function init() {
+      var detected = detectPS4Firmware();
+      var savedFw = null;
+      try {
+        savedFw = localStorage.getItem("nexus_ps4_default_fw");
+      } catch (e) {}
+
+      if (savedFw && FW_DETAILS[savedFw]) {
+        document.getElementById("default-fw-select").value = savedFw;
+        selectFirmware(savedFw);
+      } else if (detected) {
+        if (detected.indexOf("5.05") === 0) selectFirmware("505");
+        else if (detected.indexOf("6.72") === 0) selectFirmware("672");
+        else if (detected.indexOf("9.00") === 0) selectFirmware("900");
+        else if (parseFloat(detected) >= 7.0 && parseFloat(detected) <= 8.52) selectFirmware("700");
+        else if (parseFloat(detected) >= 9.03 && parseFloat(detected) <= 9.50) selectFirmware("903");
+        else if (parseFloat(detected) >= 10.0 && parseFloat(detected) <= 11.02) selectFirmware("1000");
+        else if (parseFloat(detected) >= 11.50) selectFirmware("1150");
+        else selectFirmware("all");
+      } else {
+        selectFirmware("all");
+      }
+    })();
+  </script>
+</body>
+</html>
